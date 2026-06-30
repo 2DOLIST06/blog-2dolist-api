@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: the-muscle-temple-api
+    runtime: node
+    plan: starter
+    rootDir: .
+    buildCommand: npm ci && npm run prisma:generate && npm run build
+    startCommand: npm run prisma:deploy && npm run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: SMTP_SERVER
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_EHLO_DOMAIN
+        value: the-muscle-temple-api
+      - key: MAIL_FROM
+        sync: false
+      - key: NEWSLETTER_RECIPIENT_EMAIL
+        value: contact@2dolist.fr

@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SeoEntityType {
+  POST
+  CATEGORY
+  AUTHOR
+  PAGE
+}
+
+model NewsletterSubscriber {
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  source             String?
+  userAgent          String?
+  notificationSentAt DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([createdAt])
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  passwordHash   String
+  role           UserRole @default(EDITOR)
+  displayName    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Author {
+  id             String      @id @default(cuid())
+  name           String
+  slug           String      @unique
+  bio            String?
+  avatarMediaId  String?
+  avatarMedia    Media?      @relation(fields: [avatarMediaId], references: [id])
+  posts          Post[]
+  seoMetadata    SeoMetadata?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Category {
+  id             String      @id @default(cuid())
+  name           String
+  slug           String      @unique
+  description    String?
+  posts          Post[]
+  seoMetadata    SeoMetadata?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Tag {
+  id             String      @id @default(cuid())
+  name           String
+  slug           String      @unique
+  postTags       PostTag[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Media {
+  id             String      @id @default(cuid())
+  url            String
+  altText        String?
+  caption        String?
+  mimeType       String?
+  source         String      @default("external")
+  storageKey     String?     @unique
+  bucket         String?
+  sizeBytes      Int?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  posts          Post[]      @relation("CoverMedia")
+  authorAvatars  Author[]
+  seoOpenGraphFor SeoMetadata[] @relation("SeoOpenGraphImage")
+}
+
+model Post {
+  id                 String       @id @default(cuid())
+  title              String
+  slug               String
+  locale             String       @default("en")
+  translationGroupId String       @default(dbgenerated("gen_random_uuid()::text"))
+  h1                 String?
+  chapoHtml          String?
+  excerpt            String?
+  contentMarkdown    String
+  contentJson        Json?
+  contentHtml        String?
+  faqJson            Json?
+  heroImageUrl       String?
+  heroImageAlt       String?
+  metaTitle          String?
+  metaDescription    String?
+  canonicalUrl       String?
+  robots             String       @default("noindex,follow")
+  isActive           Boolean      @default(false)
+  isIndexable        Boolean      @default(false)
+  categorySlug       String?
+  tagsJson           Json?
+  jsonLd             Json?
+  status             PostStatus   @default(DRAFT)
+  publishedAt        DateTime?
+  readingTimeMinutes Int?
+  authorId           String
+  author             Author       @relation(fields: [authorId], references: [id])
+  categoryId         String?
+  category           Category?    @relation(fields: [categoryId], references: [id])
+  coverImageId       String?
+  coverImage         Media?       @relation("CoverMedia", fields: [coverImageId], references: [id])
+  seoMetadata        SeoMetadata?
+  postTags           PostTag[]
+  relatedFrom        PostRelation[] @relation("SourcePost")
+  relatedTo          PostRelation[] @relation("TargetPost")
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@unique([locale, slug])
+  @@unique([translationGroupId, locale])
+  @@index([translationGroupId])
+  @@index([locale, status, publishedAt])
+  @@index([status, publishedAt])
+  @@index([categoryId])
+  @@index([authorId])
+}
+
+model PostTag {
+  postId    String
+  tagId     String
+  post      Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag       Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+}
+
+model PostRelation {
+  sourcePostId String
+  targetPostId String
+  sourcePost   Post @relation("SourcePost", fields: [sourcePostId], references: [id], onDelete: Cascade)
+  targetPost   Post @relation("TargetPost", fields: [targetPostId], references: [id], onDelete: Cascade)
+
+  @@id([sourcePostId, targetPostId])
+}
+
+model SeoMetadata {
+  id               String         @id @default(cuid())
+  entityType       SeoEntityType
+  title            String?
+  description      String?
+  canonicalUrl     String?
+  noIndex          Boolean        @default(false)
+  openGraphImageId String?
+  openGraphImage   Media?         @relation("SeoOpenGraphImage", fields: [openGraphImageId], references: [id])
+  postId           String?        @unique
+  post             Post?          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  categoryId       String?        @unique
+  category         Category?      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  authorId         String?        @unique
+  author           Author?        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  pageKey          String?        @unique
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([entityType])
+}
