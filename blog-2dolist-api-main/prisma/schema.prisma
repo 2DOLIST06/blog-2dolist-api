@@ -101,6 +101,7 @@ model Post {
   id                 String       @id @default(cuid())
   title              String
   slug               String
+  path               String?
   locale             String       @default("en")
   translationGroupId String       @default(dbgenerated("gen_random_uuid()::text"))
   h1                 String?
@@ -138,6 +139,7 @@ model Post {
   updatedAt          DateTime     @updatedAt
 
   @@unique([locale, slug])
+  @@unique([locale, path])
   @@unique([translationGroupId, locale])
   @@index([translationGroupId])
   @@index([locale, status, publishedAt])

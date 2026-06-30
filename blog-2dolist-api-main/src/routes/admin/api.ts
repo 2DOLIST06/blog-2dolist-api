@@ -8,7 +8,7 @@ import { makeSlug } from '../../lib/slug.js';
 import { authorSchema, categorySchema, createUserSchema, loginSchema, mediaSchema, postSchema, tagSchema } from '../../validation/admin.js';
 import { requireAdminAuth, requireRole } from '../../lib/auth.js';
 import { deleteImageFromS3, ImageUploadError, S3StorageError, uploadImageToS3 } from '../../lib/storage/s3.js';
-import { buildPostCanonical, buildPostPath, isPostLocale } from '../../lib/seo/urls.js';
+import { buildPostPublicCanonical, buildPostPublicPath, isPostLocale, normalizePublicPath } from '../../lib/seo/urls.js';
 
 const pageSeoSchema = z.object({
   title: z.string().max(70).optional(),
@@ -49,8 +49,8 @@ function normalizeTranslationGroupId(value?: string | null): string | undefined 
 function serializeAdminPost<T extends { locale: string; slug: string; translationGroupId: string }>(post: T) {
   return {
     ...post,
-    path: buildPostPath(post.locale, post.slug),
-    canonicalUrl: buildPostCanonical(post.locale, post.slug)
+    path: buildPostPublicPath(post),
+    canonicalUrl: buildPostPublicCanonical(post)
   };
 }
 
@@ -93,7 +93,7 @@ async function getAdminTranslations(prisma: PrismaClient, translationGroupIds: s
 
   const translations = await prisma.post.findMany({
     where: { translationGroupId: { in: uniqueGroupIds } },
-    select: { id: true, locale: true, slug: true, title: true, status: true, translationGroupId: true }
+    select: { id: true, locale: true, slug: true, path: true, canonicalUrl: true, title: true, status: true, translationGroupId: true }
   });
 
   const byGroup = new Map<string, Array<{ id: string; locale: string; slug: string; title: string; status: PostStatus; path: string; canonicalUrl: string }>>();
@@ -105,8 +105,8 @@ async function getAdminTranslations(prisma: PrismaClient, translationGroupIds: s
       slug: translation.slug,
       title: translation.title,
       status: translation.status,
-      path: buildPostPath(translation.locale, translation.slug),
-      canonicalUrl: buildPostCanonical(translation.locale, translation.slug)
+      path: buildPostPublicPath(translation),
+      canonicalUrl: buildPostPublicCanonical(translation)
     });
     byGroup.set(translation.translationGroupId, items);
   }
@@ -355,6 +355,7 @@ export const adminApiRoutes: FastifyPluginAsync = async (fastify) => {
         data: {
           title: body.title,
           slug,
+          path: normalizePublicPath(body.path),
           locale,
           translationGroupId,
           excerpt: body.excerpt,
@@ -483,6 +484,7 @@ export const adminApiRoutes: FastifyPluginAsync = async (fastify) => {
       const postData = {
         title: body.title,
         slug,
+        path: normalizePublicPath(body.path),
         locale,
         translationGroupId,
         excerpt: body.excerpt,
