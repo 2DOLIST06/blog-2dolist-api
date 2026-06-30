@@ -10,6 +10,8 @@ export type SiteLocale = PostLocale;
 export type PostUrlSource = {
   locale: string;
   slug: string;
+  path?: string | null;
+  canonicalUrl?: string | null;
   status?: PostStatus;
   isActive?: boolean;
   isIndexable?: boolean;
@@ -49,6 +51,21 @@ function normalizeBasePath(path: string): string {
   const trimmedPath = path.trim();
   if (!trimmedPath || trimmedPath === '/') return '/';
   return `/${trimSlashes(trimmedPath)}`;
+}
+
+export function normalizePublicPath(path?: string | null): string | null {
+  if (path == null) return null;
+  const trimmedPath = path.trim();
+  if (!trimmedPath) return null;
+  if (/[\u0000-\u001F\u007F]/u.test(trimmedPath)) return null;
+
+  const normalizeRelativePath = (value: string) => {
+    const withoutLeadingSlashes = value.replace(/^\/+/g, '');
+    return withoutLeadingSlashes ? `/${withoutLeadingSlashes}` : '/';
+  };
+
+  const parsed = new URL(trimmedPath, SITE_BASE_URL);
+  return normalizeRelativePath(parsed.pathname);
 }
 
 export function isPostLocale(locale: unknown): locale is PostLocale {
@@ -110,6 +127,20 @@ export function buildPostCanonical(locale: string, slug: string): string {
   return buildCanonicalUrl(locale, `/articles/${slug}`);
 }
 
+export function buildPostPublicPath(post: PostUrlSource): string {
+  return normalizePublicPath(post.path) ?? buildPostPath(post.locale, post.slug);
+}
+
+export function buildPostPublicCanonical(post: PostUrlSource, seoCanonicalUrl?: string | null): string {
+  if (post.canonicalUrl) return post.canonicalUrl;
+  if (seoCanonicalUrl) return seoCanonicalUrl;
+
+  const publicPath = normalizePublicPath(post.path);
+  if (publicPath) return `${SITE_BASE_URL}${publicPath}`;
+
+  return buildPostCanonical(post.locale, post.slug);
+}
+
 export function buildPostsIndexPath(locale: string): string {
   return buildLocalizedPath(locale, '/articles');
 }
@@ -157,8 +188,8 @@ export function buildPostTranslationLink(post: PostUrlSource): PostTranslationLi
   return {
     locale,
     slug: post.slug,
-    path: buildPostPath(locale, post.slug),
-    canonicalUrl: buildPostCanonical(locale, post.slug)
+    path: buildPostPublicPath(post),
+    canonicalUrl: buildPostPublicCanonical(post)
   };
 }
 
@@ -181,11 +212,14 @@ export function buildPostHreflang(currentPost: PostUrlSource, translations: Post
     if (!byLocale.has(locale)) byLocale.set(locale, post);
   }
 
-  const pathByLocale: Partial<Record<SiteLocale, string>> = {};
+  const links: PostHreflangLink[] = [];
   for (const locale of SUPPORTED_POST_LOCALES) {
     const post = byLocale.get(locale);
-    if (post) pathByLocale[locale] = `/articles/${post.slug}`;
+    if (post) links.push({ hreflang: locale, href: buildPostPublicCanonical(post) });
   }
 
-  return buildHreflang(pathByLocale);
+  const defaultPost = byLocale.get(DEFAULT_POST_LOCALE);
+  if (defaultPost) links.push({ hreflang: 'x-default', href: buildPostPublicCanonical(defaultPost) });
+
+  return links;
 }

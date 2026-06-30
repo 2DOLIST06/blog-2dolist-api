@@ -4,7 +4,7 @@ import {
   SITE_BASE_URL,
   buildCategoryCanonical,
   buildPageCanonical,
-  buildPostCanonical,
+  buildPostPublicCanonical,
   isPostLocale,
   type PostLocale
 } from './urls.js';
@@ -87,7 +87,7 @@ export async function buildSitemapXml(prisma: PrismaClient, locale: PostLocale):
   const [posts, categories, seoPages] = await Promise.all([
     prisma.post.findMany({
       where: indexablePostWhere,
-      select: { slug: true, updatedAt: true, publishedAt: true },
+      select: { locale: true, slug: true, path: true, canonicalUrl: true, updatedAt: true, publishedAt: true },
       orderBy: [{ publishedAt: 'desc' }]
     }),
     prisma.category.findMany({
@@ -117,7 +117,7 @@ export async function buildSitemapXml(prisma: PrismaClient, locale: PostLocale):
   });
 
   const postEntries: SitemapEntry[] = posts.map((post) => ({
-    loc: buildPostCanonical(locale, post.slug),
+    loc: buildPostPublicCanonical(post),
     lastmod: post.updatedAt ?? post.publishedAt,
     changefreq: 'monthly',
     priority: 0.7

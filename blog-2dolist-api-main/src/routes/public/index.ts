@@ -12,14 +12,15 @@ import {
   buildPageCanonical,
   buildPageHreflang,
   buildPagePath,
-  buildPostCanonical,
   buildPostHreflang,
-  buildPostPath,
+  buildPostPublicCanonical,
+  buildPostPublicPath,
   buildPostTranslations,
   buildPostsIndexCanonical,
   buildPostsIndexHreflang,
   buildPostsIndexPath,
-  isPostLocale
+  isPostLocale,
+  normalizePublicPath
 } from '../../lib/seo/urls.js';
 import { sendNewsletterSubscriptionEmail } from '../../lib/email/newsletter.js';
 import { buildRobotsTxt, buildSitemapXml } from '../../lib/seo/sitemap.js';
@@ -61,13 +62,30 @@ const postDetailInclude = {
 
 type PublicPost = Prisma.PostGetPayload<{ include: typeof postInclude }>;
 type PublicPostDetail = Prisma.PostGetPayload<{ include: typeof postDetailInclude }>;
-type PublicPostTranslation = Pick<PublicPost, 'id' | 'locale' | 'slug' | 'status' | 'isActive' | 'isIndexable' | 'publishedAt'>;
+type PublicPostTranslation = Pick<PublicPost, 'id' | 'locale' | 'slug' | 'path' | 'canonicalUrl' | 'status' | 'isActive' | 'isIndexable' | 'publishedAt'>;
 
 function parseLocaleQuery(query: unknown) {
   const locale = (query as { locale?: unknown }).locale;
   if (locale == null || locale === '') return { locale: 'en' as const };
   if (isPostLocale(locale)) return { locale };
   return { error: 'Locale invalide. Utilise "en" ou "fr".' };
+}
+
+function parsePathQuery(query: unknown) {
+  const path = (query as { path?: unknown }).path;
+  if (typeof path !== 'string') return { error: 'Le paramètre path est obligatoire.' };
+  const normalizedPath = normalizePublicPath(path);
+  if (!normalizedPath || normalizedPath.length > 2048) return { error: 'Le paramètre path est invalide.' };
+  return { path: normalizedPath };
+}
+
+function getPathLookupCandidates(path: string) {
+  const candidates = new Set([path]);
+  if (path !== '/') {
+    if (path.endsWith('/')) candidates.add(path.replace(/\/+$/g, ''));
+    else candidates.add(`${path}/`);
+  }
+  return [...candidates];
 }
 
 function getLocalizedPageSeo(pageKey: string, locale: string) {
@@ -110,8 +128,8 @@ const serializePublicPost = (post: PublicPost, translations: PublicPostTranslati
     tagsJson: post.tagsJson,
     seo: post.seoMetadata,
     seoMetadata: post.seoMetadata,
-    path: buildPostPath(post.locale, post.slug),
-    canonicalUrl: buildPostCanonical(post.locale, post.slug),
+    path: buildPostPublicPath(post),
+    canonicalUrl: buildPostPublicCanonical(post, post.seoMetadata?.canonicalUrl),
     translations: translationLinks,
     hreflang: buildPostHreflang(post, translations)
   };
@@ -131,8 +149,8 @@ const serializePublicPostDetail = (post: PublicPostDetail, translations: PublicP
     seo: post.seoMetadata,
     seoMetadata: post.seoMetadata,
     relatedPosts,
-    path: buildPostPath(post.locale, post.slug),
-    canonicalUrl: buildPostCanonical(post.locale, post.slug),
+    path: buildPostPublicPath(post),
+    canonicalUrl: buildPostPublicCanonical(post, post.seoMetadata?.canonicalUrl),
     translations: buildPostTranslations(post, translations),
     hreflang: buildPostHreflang(post, translations)
   };
@@ -152,6 +170,8 @@ async function getTranslationsByGroup(fastify: Parameters<FastifyPluginAsync>[0]
       isActive: true,
       isIndexable: true,
       publishedAt: true,
+      path: true,
+      canonicalUrl: true,
       translationGroupId: true
     }
   });
@@ -267,6 +287,46 @@ export const publicRoutes: FastifyPluginAsync = async (fastify) => {
         hreflang: buildPostsIndexHreflang()
       }
     };
+  });
+
+  fastify.get('/posts/by-path', async (request, reply) => {
+    const parsedLocale = parseLocaleQuery(request.query);
+    if ('error' in parsedLocale) return reply.code(400).send({ message: parsedLocale.error });
+
+    const parsedPath = parsePathQuery(request.query);
+    if ('error' in parsedPath) return reply.code(400).send({ message: parsedPath.error });
+
+    const post = await fastify.prisma.post.findFirst({
+      where: {
+        path: { in: getPathLookupCandidates(parsedPath.path) },
+        locale: parsedLocale.locale,
+        ...getPublicPostWhere()
+      },
+      include: postDetailInclude
+    });
+
+    if (!post) return reply.code(404).send({ message: 'Post not found' });
+
+    const translationsByGroup = await getTranslationsByGroup(fastify, [post.translationGroupId]);
+    const translations = translationsByGroup.get(post.translationGroupId) ?? [];
+
+    const relatedIds = await fastify.prisma.postRelation.findMany({
+      where: { sourcePostId: post.id },
+      select: { targetPostId: true }
+    });
+
+    const relatedPosts = relatedIds.length
+      ? await fastify.prisma.post.findMany({
+          where: {
+            id: { in: relatedIds.map((r) => r.targetPostId) },
+            locale: post.locale,
+            ...getPublicPostWhere()
+          },
+          include: { author: true, coverImage: true }
+        })
+      : [];
+
+    return { data: serializePublicPostDetail(post, translations, relatedPosts) };
   });
 
   fastify.get('/posts/:slug', async (request, reply) => {
