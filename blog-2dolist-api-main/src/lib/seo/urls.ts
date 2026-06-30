@@ -117,7 +117,7 @@ export function buildPageCanonical(locale: string, pageKey: string): string {
 
 export function buildPageHreflang(pageKey: string): HreflangLink[] {
   const basePath = PAGE_BASE_PATHS[pageKey as keyof typeof PAGE_BASE_PATHS] ?? `/${trimSlashes(pageKey)}`;
-  return buildHreflang({ en: basePath, fr: basePath });
+  return buildHreflang(Object.fromEntries(SUPPORTED_POST_LOCALES.map((locale) => [locale, basePath])));
 }
 
 export function buildPostPath(locale: string, slug: string): string {
@@ -151,7 +151,7 @@ export function buildPostsIndexCanonical(locale: string): string {
 }
 
 export function buildPostsIndexHreflang(): HreflangLink[] {
-  return buildHreflang({ en: '/articles', fr: '/articles' });
+  return buildHreflang(Object.fromEntries(SUPPORTED_POST_LOCALES.map((locale) => [locale, '/articles'])));
 }
 
 export function buildCategoryPath(locale: string, slug: string): string {
@@ -163,7 +163,7 @@ export function buildCategoryCanonical(locale: string, slug: string): string {
 }
 
 export function buildCategoryHreflang(slug: string): HreflangLink[] {
-  return buildHreflang({ en: `/categories/${slug}`, fr: `/categories/${slug}` });
+  return buildHreflang(Object.fromEntries(SUPPORTED_POST_LOCALES.map((locale) => [locale, `/categories/${slug}`])));
 }
 
 export function buildAuthorPath(locale: string, slug: string): string {
@@ -175,7 +175,7 @@ export function buildAuthorCanonical(locale: string, slug: string): string {
 }
 
 export function buildAuthorHreflang(slug: string): HreflangLink[] {
-  return buildHreflang({ en: `/authors/${slug}`, fr: `/authors/${slug}` });
+  return buildHreflang(Object.fromEntries(SUPPORTED_POST_LOCALES.map((locale) => [locale, `/authors/${slug}`])));
 }
 
 function isPublishedActiveIndexable(post: PostUrlSource, now = new Date()): boolean {

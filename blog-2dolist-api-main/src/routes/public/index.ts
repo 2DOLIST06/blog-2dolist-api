@@ -16,6 +16,7 @@ import {
   buildPostPublicCanonical,
   buildPostPublicPath,
   buildPostTranslations,
+  DEFAULT_POST_LOCALE,
   buildPostsIndexCanonical,
   buildPostsIndexHreflang,
   buildPostsIndexPath,
@@ -66,9 +67,9 @@ type PublicPostTranslation = Pick<PublicPost, 'id' | 'locale' | 'slug' | 'path' 
 
 function parseLocaleQuery(query: unknown) {
   const locale = (query as { locale?: unknown }).locale;
-  if (locale == null || locale === '') return { locale: 'en' as const };
+  if (locale == null || locale === '') return { locale: DEFAULT_POST_LOCALE };
   if (isPostLocale(locale)) return { locale };
-  return { error: 'Locale invalide. Utilise "en" ou "fr".' };
+  return { error: 'Locale invalide. Utilise une locale supportée.' };
 }
 
 function parsePathQuery(query: unknown) {
@@ -189,8 +190,8 @@ async function getTranslationsByGroup(fastify: Parameters<FastifyPluginAsync>[0]
 export const publicRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/health', async () => ({ ok: true }));
 
-  const sendEnglishSitemap = async (_request: unknown, reply: FastifyReply) => {
-    const sitemap = await buildSitemapXml(fastify.prisma, 'en');
+  const sendDefaultSitemap = async (_request: unknown, reply: FastifyReply) => {
+    const sitemap = await buildSitemapXml(fastify.prisma, DEFAULT_POST_LOCALE);
 
     return reply
       .header('Content-Type', 'application/xml; charset=utf-8')
@@ -207,8 +208,8 @@ export const publicRoutes: FastifyPluginAsync = async (fastify) => {
       .send(sitemap);
   };
 
-  fastify.get('/sitemap.xml', sendEnglishSitemap);
-  fastify.get('/sitemap', sendEnglishSitemap);
+  fastify.get('/sitemap.xml', sendDefaultSitemap);
+  fastify.get('/sitemap', sendDefaultSitemap);
   fastify.get('/fr/sitemap.xml', sendFrenchSitemap);
   fastify.get('/fr/sitemap', sendFrenchSitemap);
 
