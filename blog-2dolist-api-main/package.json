@@ -13,7 +13,9 @@
     "prisma:deploy": "prisma migrate deploy",
     "seed": "tsx prisma/seed.ts",
     "admin:sync": "tsx prisma/sync-admin-user.ts",
-    "generate": "prisma generate"
+    "generate": "prisma generate",
+    "import:wordpress": "tsx scripts/import-wordpress-posts.ts",
+    "import:wordpress:dry-run": "tsx scripts/import-wordpress-posts.ts --dry-run"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
