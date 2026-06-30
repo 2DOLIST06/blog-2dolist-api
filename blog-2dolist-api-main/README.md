@@ -45,7 +45,7 @@ Variables nécessaires:
 - `ADMIN_EMAIL` (seed)
 - `ADMIN_PASSWORD` (seed)
 - `SMTP_SERVER` / `SMTP_PORT` / `SMTP_USERNAME` / `SMTP_PASSWORD` / `MAIL_FROM` pour envoyer les notifications SMTP de newsletter
-- `SMTP_EHLO_DOMAIN` (optionnel, par défaut `the-muscle-temple-api`)
+- `SMTP_EHLO_DOMAIN` (optionnel, par défaut `blog-api`)
 - `NEWSLETTER_RECIPIENT_EMAIL` (par défaut `contact@2dolist.fr`)
 
 Exemple multi-origines:

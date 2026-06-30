@@ -1,10 +1,11 @@
 import { PostStatus } from '@prisma/client';
+import { DEFAULT_LOCALE, SITE_URL, SUPPORTED_LOCALES } from '../../config/site.js';
 
-export const SITE_BASE_URL = 'https://bodytrainingguide.com';
-export const SUPPORTED_POST_LOCALES = ['en', 'fr'] as const;
-export const DEFAULT_POST_LOCALE = 'en';
+export const SITE_BASE_URL = SITE_URL;
+export const SUPPORTED_POST_LOCALES = SUPPORTED_LOCALES;
+export const DEFAULT_POST_LOCALE = DEFAULT_LOCALE;
 
-export type PostLocale = (typeof SUPPORTED_POST_LOCALES)[number];
+export type PostLocale = string;
 export type SiteLocale = PostLocale;
 
 export type PostUrlSource = {

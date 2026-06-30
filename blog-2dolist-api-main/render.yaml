@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: the-muscle-temple-api
+    name: blog-api
     runtime: node
     plan: starter
     rootDir: .
@@ -27,7 +27,7 @@ services:
       - key: SMTP_PASSWORD
         sync: false
       - key: SMTP_EHLO_DOMAIN
-        value: the-muscle-temple-api
+        value: blog-api
       - key: MAIL_FROM
         sync: false
       - key: NEWSLETTER_RECIPIENT_EMAIL
