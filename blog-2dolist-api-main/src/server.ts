@@ -10,6 +10,7 @@ import { publicRoutes } from './routes/public/index.js';
 import { adminApiRoutes } from './routes/admin/api.js';
 import { adminPanelRoutes } from './routes/admin/panel.js';
 import { buildRobotsTxt, buildSitemapXml } from './lib/seo/sitemap.js';
+import { DEFAULT_POST_LOCALE } from './lib/seo/urls.js';
 
 const MULTIPART_PACKAGE = '@fastify/multipart';
 const { default: multipart } = (await import(MULTIPART_PACKAGE)) as {
@@ -38,8 +39,8 @@ app.register(multipart, {
   }
 });
 
-const sendEnglishSitemap = async (_request: unknown, reply: FastifyReply) => {
-  const sitemap = await buildSitemapXml(prisma, 'en');
+const sendDefaultSitemap = async (_request: unknown, reply: FastifyReply) => {
+  const sitemap = await buildSitemapXml(prisma, DEFAULT_POST_LOCALE);
 
   return reply
     .header('Content-Type', 'application/xml; charset=utf-8')
@@ -56,8 +57,8 @@ const sendFrenchSitemap = async (_request: unknown, reply: FastifyReply) => {
     .send(sitemap);
 };
 
-app.get('/sitemap.xml', sendEnglishSitemap);
-app.get('/sitemap', sendEnglishSitemap);
+app.get('/sitemap.xml', sendDefaultSitemap);
+app.get('/sitemap', sendDefaultSitemap);
 app.get('/fr/sitemap.xml', sendFrenchSitemap);
 app.get('/fr/sitemap', sendFrenchSitemap);
 

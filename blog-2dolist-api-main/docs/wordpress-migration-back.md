@@ -24,7 +24,9 @@ L’objectif SEO prioritaire est de conserver les URLs WordPress existantes quan
 | `publishedAt` | Date de publication d’origine. |
 | `updatedAt` | Date de dernière modification d’origine, utile pour l’audit et le sitemap si elle est reprise plus tard. |
 | `categorySlug` | Slug de catégorie WordPress ou slug cible côté API. |
+| `categoryName` | Nom lisible de la catégorie source, utile pour créer ou contrôler la catégorie cible. |
 | `authorSlug` | Slug auteur WordPress ou slug cible côté API. |
+| `authorName` | Nom lisible de l’auteur source, utile pour créer ou contrôler l’auteur cible. |
 | `coverImageUrl` | URL de l’image mise en avant WordPress ou URL migrée. |
 | `coverImageAlt` | Texte alternatif de l’image mise en avant. |
 | `faqJson` | FAQ structurée si elle existe dans le contenu ou dans un plugin SEO. |
