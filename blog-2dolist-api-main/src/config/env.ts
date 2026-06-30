@@ -5,7 +5,13 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(4000),
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters for production safety.'),
-  APP_URL: z.string().url().default('http://localhost:4000'),
+  APP_URL: z.string().url().default('http://localhost:3000'),
+  PUBLIC_SITE_URL: z.string().url().optional(),
+  SITE_NAME: z.string().min(1).optional(),
+  DEFAULT_LOCALE: z.string().min(1).optional(),
+  SUPPORTED_LOCALES: z.string().min(1).optional(),
+  DEFAULT_META_TITLE: z.string().min(1).optional(),
+  DEFAULT_META_DESCRIPTION: z.string().optional(),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
   AUTH_DEBUG: z.coerce.boolean().default(false),
   AWS_ACCESS_KEY_ID: z.string().min(1).optional(),
@@ -20,7 +26,7 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().int().positive().default(587),
   SMTP_USERNAME: z.string().min(1).optional(),
   SMTP_PASSWORD: z.string().min(1).optional(),
-  SMTP_EHLO_DOMAIN: z.string().min(1).default('the-muscle-temple-api'),
+  SMTP_EHLO_DOMAIN: z.string().min(1).default('blog-api'),
   MAIL_FROM: z.string().email().optional(),
   NEWSLETTER_RECIPIENT_EMAIL: z.string().email().default('contact@2dolist.fr')
 });
