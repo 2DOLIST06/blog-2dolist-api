@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from 'fastify';
+import { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'node:crypto';
 import { PostStatus, Prisma, PrismaClient, SeoEntityType, UserRole } from '@prisma/client';
@@ -143,14 +143,15 @@ async function ensureExistingIds(
 }
 
 export const adminApiRoutes: FastifyPluginAsync = async (fastify) => {
-  fastify.post('/auth/login', async (request, reply) => {
+  const loginHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     const body = loginSchema.parse(request.body);
     const email = normalizeEmail(body.email);
 
     if (env.AUTH_DEBUG) {
       request.log.info(
         {
-          route: '/admin-api/auth/login',
+          route: request.url,
+          canonicalRoute: '/admin-api/auth/login',
           email,
           passwordLength: body.password.length
         },
@@ -220,7 +221,10 @@ export const adminApiRoutes: FastifyPluginAsync = async (fastify) => {
       token,
       data: { token, user: { id: user.id, email: user.email, role: user.role, displayName: user.displayName } }
     };
-  });
+  };
+
+  fastify.post('/auth/login', loginHandler);
+  fastify.post('/login', loginHandler);
 
   fastify.register(async (protectedScope) => {
     protectedScope.addHook('preHandler', requireAdminAuth);
