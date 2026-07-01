@@ -48,23 +48,10 @@ const sendDefaultSitemap = async (_request: unknown, reply: FastifyReply) => {
     .send(sitemap);
 };
 
-const sendFrenchSitemap = async (_request: unknown, reply: FastifyReply) => {
-  const sitemap = await buildSitemapXml(prisma, 'fr');
-
-  return reply
-    .header('Content-Type', 'application/xml; charset=utf-8')
-    .header('Cache-Control', 'public, max-age=0, s-maxage=3600')
-    .send(sitemap);
-};
-
 app.get('/sitemap.xml', sendDefaultSitemap);
 app.get('/sitemap', sendDefaultSitemap);
-app.get('/fr/sitemap.xml', sendFrenchSitemap);
-app.get('/fr/sitemap', sendFrenchSitemap);
 
 app.get('/robots.txt', async (_request, reply) => reply.header('Content-Type', 'text/plain; charset=utf-8').send(buildRobotsTxt()));
-
-app.get('/fr/robots.txt', async (_request, reply) => reply.header('Content-Type', 'text/plain; charset=utf-8').send(buildRobotsTxt()));
 
 app.register(publicRoutes, { prefix: '/api' });
 app.register(adminApiRoutes, { prefix: '/admin-api' });

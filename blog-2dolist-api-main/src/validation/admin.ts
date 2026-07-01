@@ -50,7 +50,7 @@ export const postSchema = z.object({
   title: z.string().min(4),
   slug: z.string().optional(),
   path: z.string().trim().optional().nullable(),
-  locale: z.enum(SUPPORTED_POST_LOCALES).default('en'),
+  locale: z.enum(SUPPORTED_POST_LOCALES).default(SUPPORTED_POST_LOCALES[0]),
   translationGroupId: z.string().trim().optional().nullable(),
   excerpt: z.string().max(280).optional(),
   contentHtml: z.string().min(10),
