@@ -134,5 +134,5 @@ export async function buildSitemapXml(prisma: PrismaClient, locale: PostLocale):
 }
 
 export function buildRobotsTxt(): string {
-  return ['User-agent: *', 'Allow: /', `Sitemap: ${SITE_BASE_URL}/sitemap.xml`, `Sitemap: ${SITE_BASE_URL}/fr/sitemap.xml`, ''].join('\n');
+  return ['User-agent: *', 'Allow: /', `Sitemap: ${SITE_BASE_URL}/sitemap.xml`, ''].join('\n');
 }

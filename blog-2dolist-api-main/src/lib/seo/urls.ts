@@ -132,9 +132,20 @@ export function buildPostPublicPath(post: PostUrlSource): string {
   return normalizePublicPath(post.path) ?? buildPostPath(post.locale, post.slug);
 }
 
+function isAllowedCanonicalUrl(canonicalUrl?: string | null): canonicalUrl is string {
+  if (!canonicalUrl) return false;
+  try {
+    const url = new URL(canonicalUrl);
+    const siteUrl = new URL(SITE_BASE_URL);
+    return url.origin === siteUrl.origin && !url.pathname.startsWith('/fr/');
+  } catch {
+    return false;
+  }
+}
+
 export function buildPostPublicCanonical(post: PostUrlSource, seoCanonicalUrl?: string | null): string {
-  if (post.canonicalUrl) return post.canonicalUrl;
-  if (seoCanonicalUrl) return seoCanonicalUrl;
+  if (isAllowedCanonicalUrl(post.canonicalUrl)) return post.canonicalUrl;
+  if (isAllowedCanonicalUrl(seoCanonicalUrl)) return seoCanonicalUrl;
 
   const publicPath = normalizePublicPath(post.path);
   if (publicPath) return `${SITE_BASE_URL}${publicPath}`;

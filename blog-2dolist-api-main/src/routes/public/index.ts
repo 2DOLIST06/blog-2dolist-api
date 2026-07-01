@@ -127,6 +127,10 @@ const serializePublicPost = (post: PublicPost, translations: PublicPostTranslati
     authorSlug: post.author.slug,
     tags,
     tagsJson: post.tagsJson,
+    coverImageUrl: post.coverImage?.url ?? post.heroImageUrl ?? null,
+    coverImageAlt: post.coverImage?.altText ?? post.heroImageAlt ?? null,
+    heroImageUrl: post.heroImageUrl ?? post.coverImage?.url ?? null,
+    heroImageAlt: post.heroImageAlt ?? post.coverImage?.altText ?? null,
     seo: post.seoMetadata,
     seoMetadata: post.seoMetadata,
     path: buildPostPublicPath(post),
@@ -147,6 +151,10 @@ const serializePublicPostDetail = (post: PublicPostDetail, translations: PublicP
     authorSlug: post.author.slug,
     tags,
     tagsJson: post.tagsJson,
+    coverImageUrl: post.coverImage?.url ?? post.heroImageUrl ?? null,
+    coverImageAlt: post.coverImage?.altText ?? post.heroImageAlt ?? null,
+    heroImageUrl: post.heroImageUrl ?? post.coverImage?.url ?? null,
+    heroImageAlt: post.heroImageAlt ?? post.coverImage?.altText ?? null,
     seo: post.seoMetadata,
     seoMetadata: post.seoMetadata,
     relatedPosts,
@@ -199,25 +207,10 @@ export const publicRoutes: FastifyPluginAsync = async (fastify) => {
       .send(sitemap);
   };
 
-  const sendFrenchSitemap = async (_request: unknown, reply: FastifyReply) => {
-    const sitemap = await buildSitemapXml(fastify.prisma, 'fr');
-
-    return reply
-      .header('Content-Type', 'application/xml; charset=utf-8')
-      .header('Cache-Control', 'public, max-age=0, s-maxage=3600')
-      .send(sitemap);
-  };
-
   fastify.get('/sitemap.xml', sendDefaultSitemap);
   fastify.get('/sitemap', sendDefaultSitemap);
-  fastify.get('/fr/sitemap.xml', sendFrenchSitemap);
-  fastify.get('/fr/sitemap', sendFrenchSitemap);
 
   fastify.get('/robots.txt', async (_request, reply) =>
-    reply.header('Content-Type', 'text/plain; charset=utf-8').send(buildRobotsTxt())
-  );
-
-  fastify.get('/fr/robots.txt', async (_request, reply) =>
     reply.header('Content-Type', 'text/plain; charset=utf-8').send(buildRobotsTxt())
   );
 
