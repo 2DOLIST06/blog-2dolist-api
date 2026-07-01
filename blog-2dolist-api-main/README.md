@@ -83,7 +83,7 @@ npm run dev
 - `GET /api/seo/pages/:key`
 
 ## Endpoints admin (`/admin-api`)
-- Auth: `POST /admin-api/auth/login`
+- Auth: `POST /admin-api/auth/login` (legacy alias: `POST /admin-api/login`)
 - Dashboard: `GET /admin-api/dashboard`
 - Newsletter: `GET /admin-api/newsletter-subscribers` pour récupérer la liste des inscrits enregistrés en base
 - CRUD: posts / categories / authors

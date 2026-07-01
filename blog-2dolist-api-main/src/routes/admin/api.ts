@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from 'fastify';
+import { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'node:crypto';
 import { PostStatus, Prisma, PrismaClient, SeoEntityType, UserRole } from '@prisma/client';
@@ -143,14 +143,15 @@ async function ensureExistingIds(
 }
 
 export const adminApiRoutes: FastifyPluginAsync = async (fastify) => {
-  fastify.post('/auth/login', async (request, reply) => {
+  const loginHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     const body = loginSchema.parse(request.body);
     const email = normalizeEmail(body.email);
 
     if (env.AUTH_DEBUG) {
       request.log.info(
         {
-          route: '/admin-api/auth/login',
+          route: request.url,
+          canonicalRoute: '/admin-api/auth/login',
           email,
           passwordLength: body.password.length
         },
@@ -168,16 +169,15 @@ export const adminApiRoutes: FastifyPluginAsync = async (fastify) => {
           userIdPreview: user ? `${user.id.slice(0, 6)}...` : null,
           role: user?.role,
           hasPasswordHash: Boolean(user?.passwordHash),
-          passwordHashPrefix: user?.passwordHash ? user.passwordHash.slice(0, 4) : null,
           passwordHashLength: user?.passwordHash?.length ?? 0
         },
         'Admin login user lookup result'
       );
     }
 
-    if (!user) {
+    if (!user || user.role !== UserRole.ADMIN) {
       if (env.AUTH_DEBUG) {
-        request.log.warn({ email, reason: 'email_not_found', statusCode: 401 }, 'Admin login rejected');
+        request.log.warn({ email, reason: user ? 'not_admin' : 'email_not_found', role: user?.role, statusCode: 401 }, 'Admin login rejected');
       }
       return reply.code(401).send({ message: 'Invalid credentials' });
     }
@@ -221,7 +221,10 @@ export const adminApiRoutes: FastifyPluginAsync = async (fastify) => {
       token,
       data: { token, user: { id: user.id, email: user.email, role: user.role, displayName: user.displayName } }
     };
-  });
+  };
+
+  fastify.post('/auth/login', loginHandler);
+  fastify.post('/login', loginHandler);
 
   fastify.register(async (protectedScope) => {
     protectedScope.addHook('preHandler', requireAdminAuth);
