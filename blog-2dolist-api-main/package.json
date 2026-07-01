@@ -21,7 +21,10 @@
     "cleanup:wordpress:non-aerial:dry-run": "tsx scripts/cleanup-non-aerial-wordpress-posts.ts --dry-run",
     "cleanup:wordpress:non-aerial:disable": "tsx scripts/cleanup-non-aerial-wordpress-posts.ts --disable",
     "check:wordpress-import": "tsx scripts/check-wordpress-import.ts",
-    "admin:check": "tsx prisma/check-admin-user.ts"
+    "admin:check": "tsx prisma/check-admin-user.ts",
+    "analyze:wordpress-content": "tsx scripts/analyze-wordpress-content-blocks.ts",
+    "normalize:wordpress-content:dry-run": "tsx scripts/normalize-wordpress-imported-content.ts --dry-run",
+    "normalize:wordpress-content": "tsx scripts/normalize-wordpress-imported-content.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
