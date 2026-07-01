@@ -4,9 +4,19 @@ import path from 'node:path';
 import { Prisma, PrismaClient, PostStatus, SeoEntityType } from '@prisma/client';
 
 const prisma = new PrismaClient();
-const SOURCE_FILE = path.resolve('data/import/wordpress-posts-import.json');
+const DEFAULT_SOURCE_FILE = 'data/import/wordpress-posts-import.json';
 const REPORT_FILE = path.resolve('data/import/wordpress-import-result.md');
 const dryRun = process.argv.includes('--dry-run');
+
+function getArgValue(name: string): string | undefined {
+  const prefix = `${name}=`;
+  const inline = process.argv.find((arg) => arg.startsWith(prefix));
+  if (inline) return inline.slice(prefix.length);
+  const index = process.argv.indexOf(name);
+  return index >= 0 ? process.argv[index + 1] : undefined;
+}
+
+const sourceFile = path.resolve(getArgValue('--file') ?? DEFAULT_SOURCE_FILE);
 
 type WordpressPostImport = {
   path?: unknown;
@@ -135,9 +145,10 @@ function validate(rows: unknown): ValidPost[] {
 }
 
 async function main() {
-  const raw = await fs.readFile(SOURCE_FILE, 'utf8');
+  const raw = await fs.readFile(sourceFile, 'utf8');
   const posts = validate(JSON.parse(raw));
 
+  console.log(`Fichier source: ${path.relative(process.cwd(), sourceFile)}`);
   console.log(`Validation OK: ${posts.length} article(s) publiés prêts à importer.`);
   console.log(dryRun ? 'Mode dry-run: aucune écriture en base ni rapport ne sera effectuée.' : 'Mode import réel: écriture en base activée.');
 
@@ -220,7 +231,9 @@ async function main() {
         categorySlug: savedCategory?.slug,
         authorId: savedAuthor.id,
         categoryId: savedCategory?.id,
-        coverImageId: savedMedia?.id
+        coverImageId: savedMedia?.id,
+        heroImageUrl: coverUrl,
+        heroImageAlt: optionalString(post.coverImageAlt)
       };
 
       const currentPost = await tx.post.findUnique({ where: { locale_path: { locale: post.locale, path: post.path } } })
