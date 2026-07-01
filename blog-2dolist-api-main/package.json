@@ -20,7 +20,8 @@
     "import:wordpress:aerien": "tsx scripts/import-wordpress-posts.ts --file data/import/wordpress-posts-import-aerien.json",
     "cleanup:wordpress:non-aerial:dry-run": "tsx scripts/cleanup-non-aerial-wordpress-posts.ts --dry-run",
     "cleanup:wordpress:non-aerial:disable": "tsx scripts/cleanup-non-aerial-wordpress-posts.ts --disable",
-    "check:wordpress-import": "tsx scripts/check-wordpress-import.ts"
+    "check:wordpress-import": "tsx scripts/check-wordpress-import.ts",
+    "admin:check": "tsx prisma/check-admin-user.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",

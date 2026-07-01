@@ -168,16 +168,15 @@ export const adminApiRoutes: FastifyPluginAsync = async (fastify) => {
           userIdPreview: user ? `${user.id.slice(0, 6)}...` : null,
           role: user?.role,
           hasPasswordHash: Boolean(user?.passwordHash),
-          passwordHashPrefix: user?.passwordHash ? user.passwordHash.slice(0, 4) : null,
           passwordHashLength: user?.passwordHash?.length ?? 0
         },
         'Admin login user lookup result'
       );
     }
 
-    if (!user) {
+    if (!user || user.role !== UserRole.ADMIN) {
       if (env.AUTH_DEBUG) {
-        request.log.warn({ email, reason: 'email_not_found', statusCode: 401 }, 'Admin login rejected');
+        request.log.warn({ email, reason: user ? 'not_admin' : 'email_not_found', role: user?.role, statusCode: 401 }, 'Admin login rejected');
       }
       return reply.code(401).send({ message: 'Invalid credentials' });
     }
