@@ -24,7 +24,10 @@
     "admin:check": "tsx prisma/check-admin-user.ts",
     "analyze:wordpress-content": "tsx scripts/analyze-wordpress-content-blocks.ts",
     "normalize:wordpress-content:dry-run": "tsx scripts/normalize-wordpress-imported-content.ts --dry-run",
-    "normalize:wordpress-content": "tsx scripts/normalize-wordpress-imported-content.ts"
+    "normalize:wordpress-content": "tsx scripts/normalize-wordpress-imported-content.ts",
+    "analyze:wordpress-images": "tsx scripts/analyze-wordpress-images.ts",
+    "migrate:wordpress-images:dry-run": "tsx scripts/migrate-wordpress-images-to-s3.ts --dry-run",
+    "migrate:wordpress-images": "tsx scripts/migrate-wordpress-images-to-s3.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
