@@ -23,6 +23,8 @@
     "check:wordpress-import": "tsx scripts/check-wordpress-import.ts",
     "admin:check": "tsx prisma/check-admin-user.ts",
     "analyze:wordpress-content": "tsx scripts/analyze-wordpress-content-blocks.ts",
+    "cleanup:faq-duplicates:dry-run": "tsx scripts/cleanup-duplicated-faq-content.ts --dry-run",
+    "cleanup:faq-duplicates": "tsx scripts/cleanup-duplicated-faq-content.ts",
     "normalize:wordpress-content:dry-run": "tsx scripts/normalize-wordpress-imported-content.ts --dry-run",
     "normalize:wordpress-content": "tsx scripts/normalize-wordpress-imported-content.ts",
     "analyze:wordpress-images": "tsx scripts/analyze-wordpress-images.ts",
