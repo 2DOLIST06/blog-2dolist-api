@@ -14,6 +14,8 @@
     "seed": "tsx prisma/seed.ts",
     "admin:sync": "tsx prisma/sync-admin-user.ts",
     "generate": "prisma generate",
+    "import:articles:json:dry-run": "tsx scripts/import-articles-json.ts --dry-run",
+    "import:articles:json": "tsx scripts/import-articles-json.ts",
     "import:wordpress": "tsx scripts/import-wordpress-posts.ts",
     "import:wordpress:dry-run": "tsx scripts/import-wordpress-posts.ts --dry-run",
     "import:wordpress:aerien:dry-run": "tsx scripts/import-wordpress-posts.ts --dry-run --file data/import/wordpress-posts-import-aerien.json",
