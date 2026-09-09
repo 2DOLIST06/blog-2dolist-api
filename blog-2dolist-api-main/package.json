@@ -33,7 +33,9 @@
     "migrate:wordpress-images:dry-run": "tsx scripts/migrate-wordpress-images-to-s3.ts --dry-run",
     "migrate:wordpress-images": "tsx scripts/migrate-wordpress-images-to-s3.ts",
     "fix:category-paths:dry-run": "tsx scripts/fix-wordpress-category-paths.ts --dry-run",
-    "fix:category-paths": "tsx scripts/fix-wordpress-category-paths.ts"
+    "fix:category-paths": "tsx scripts/fix-wordpress-category-paths.ts",
+    "fix:category-display-names:dry-run": "tsx scripts/fix-category-display-names.ts --dry-run",
+    "fix:category-display-names": "tsx scripts/fix-category-display-names.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
