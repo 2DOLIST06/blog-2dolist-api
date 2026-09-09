@@ -38,8 +38,21 @@ export const categorySchema = z.object({
   name: z.string().min(2),
   slug: z.string().optional(),
   description: z.string().optional(),
+  excerpt: z.string().optional().nullable(),
+  contentHtml: z.string().optional().nullable(),
+  contentJson: z.union([z.record(z.string(), z.unknown()), z.array(z.unknown()), z.null()]).optional(),
+  metaTitle: z.string().max(70).optional().nullable(),
+  metaDescription: z.string().max(160).optional().nullable(),
+  canonicalUrl: z.string().url().optional().nullable(),
+  isActive: z.boolean().optional(),
+  isIndexable: z.boolean().optional(),
   seo: seoSchema.optional()
 });
+
+// Deliberately excludes id, slug and path: editorial updates cannot alter URLs.
+export const updateCategorySchema = categorySchema
+  .omit({ slug: true, description: true, seo: true })
+  .partial();
 
 export const tagSchema = z.object({
   name: z.string().min(2),
