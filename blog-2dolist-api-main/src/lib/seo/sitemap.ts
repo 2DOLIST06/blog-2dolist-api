@@ -91,8 +91,8 @@ export async function buildSitemapXml(prisma: PrismaClient, locale: PostLocale):
       orderBy: [{ publishedAt: 'desc' }]
     }),
     prisma.category.findMany({
-      where: { posts: { some: indexablePostWhere } },
-      select: { slug: true, path: true, updatedAt: true, seoMetadata: { select: { canonicalUrl: true } } },
+      where: { isActive: true, isIndexable: true, path: { not: null } },
+      select: { slug: true, path: true, canonicalUrl: true, updatedAt: true },
       orderBy: { slug: 'asc' }
     }),
     prisma.seoMetadata.findMany({
@@ -124,7 +124,7 @@ export async function buildSitemapXml(prisma: PrismaClient, locale: PostLocale):
   }));
 
   const categoryEntries: SitemapEntry[] = categories.map((category) => ({
-    loc: buildCategoryPublicCanonical(category, locale, category.seoMetadata?.canonicalUrl),
+    loc: buildCategoryPublicCanonical(category, locale, category.canonicalUrl),
     lastmod: category.updatedAt,
     changefreq: 'weekly',
     priority: 0.6

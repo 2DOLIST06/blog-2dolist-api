@@ -66,6 +66,14 @@ model Category {
   slug           String      @unique
   path           String?     @unique
   description    String?
+  excerpt        String?
+  contentHtml    String?
+  contentJson    Json?
+  metaTitle      String?
+  metaDescription String?
+  canonicalUrl   String?
+  isActive       Boolean     @default(true)
+  isIndexable    Boolean     @default(true)
   posts          Post[]
   seoMetadata    SeoMetadata?
   createdAt      DateTime    @default(now())

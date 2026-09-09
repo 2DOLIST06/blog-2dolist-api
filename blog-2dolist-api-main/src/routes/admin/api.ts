@@ -5,7 +5,7 @@ import { PostStatus, Prisma, PrismaClient, SeoEntityType, UserRole } from '@pris
 import { z } from 'zod';
 import { env } from '../../config/env.js';
 import { makeSlug } from '../../lib/slug.js';
-import { authorSchema, categorySchema, createUserSchema, loginSchema, mediaSchema, postSchema, tagSchema } from '../../validation/admin.js';
+import { authorSchema, categorySchema, createUserSchema, loginSchema, mediaSchema, postSchema, tagSchema, updateCategorySchema } from '../../validation/admin.js';
 import { requireAdminAuth, requireRole } from '../../lib/auth.js';
 import { deleteImageFromS3, ImageUploadError, S3StorageError, uploadImageToS3 } from '../../lib/storage/s3.js';
 import { buildPostPublicCanonical, buildPostPublicPath, isPostLocale, normalizePublicPath } from '../../lib/seo/urls.js';
@@ -570,11 +570,30 @@ export const adminApiRoutes: FastifyPluginAsync = async (fastify) => {
       return { success: true };
     });
 
-    protectedScope.get('/categories', async () => ({ data: await fastify.prisma.category.findMany({ include: { seoMetadata: true } }) }));
+    protectedScope.get('/categories', async () => ({ data: await fastify.prisma.category.findMany({ include: { seoMetadata: true }, orderBy: { name: 'asc' } }) }));
+    protectedScope.get('/categories/:id', async (request, reply) => {
+      const category = await fastify.prisma.category.findUnique({
+        where: { id: (request.params as { id: string }).id },
+        include: { seoMetadata: true }
+      });
+      return category ? { data: category } : reply.code(404).send({ message: 'Catégorie introuvable.' });
+    });
     protectedScope.post('/categories', async (request) => {
       const body = categorySchema.parse(request.body);
       const category = await fastify.prisma.category.create({
-        data: { name: body.name, slug: body.slug ? makeSlug(body.slug) : makeSlug(body.name), description: body.description }
+        data: {
+          name: body.name,
+          slug: body.slug ? makeSlug(body.slug) : makeSlug(body.name),
+          description: body.description,
+          excerpt: body.excerpt,
+          contentHtml: body.contentHtml,
+          contentJson: body.contentJson === null ? Prisma.DbNull : body.contentJson as Prisma.InputJsonValue | undefined,
+          metaTitle: body.metaTitle,
+          metaDescription: body.metaDescription,
+          canonicalUrl: body.canonicalUrl,
+          isActive: body.isActive,
+          isIndexable: body.isIndexable
+        }
       });
       if (body.seo) {
         await fastify.prisma.seoMetadata.create({
@@ -597,7 +616,20 @@ export const adminApiRoutes: FastifyPluginAsync = async (fastify) => {
       const body = categorySchema.parse(request.body);
       const category = await fastify.prisma.category.update({
         where: { id },
-        data: { name: body.name, slug: body.slug ? makeSlug(body.slug) : makeSlug(body.name), description: body.description }
+        data: {
+          name: body.name,
+          // A missing slug must never regenerate it from a renamed display name.
+          slug: body.slug ? makeSlug(body.slug) : undefined,
+          description: body.description,
+          excerpt: body.excerpt,
+          contentHtml: body.contentHtml,
+          contentJson: body.contentJson === null ? Prisma.DbNull : body.contentJson as Prisma.InputJsonValue | undefined,
+          metaTitle: body.metaTitle,
+          metaDescription: body.metaDescription,
+          canonicalUrl: body.canonicalUrl,
+          isActive: body.isActive,
+          isIndexable: body.isIndexable
+        }
       });
       if (body.seo) {
         await fastify.prisma.seoMetadata.upsert({
@@ -621,6 +653,35 @@ export const adminApiRoutes: FastifyPluginAsync = async (fastify) => {
         });
       }
       return { data: category };
+    });
+    protectedScope.patch('/categories/:id', async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const body = updateCategorySchema.parse(request.body);
+      const contentJson = body.contentJson === null ? Prisma.DbNull : body.contentJson as Prisma.InputJsonValue | undefined;
+
+      try {
+        const category = await fastify.prisma.category.update({
+          where: { id },
+          data: {
+            name: body.name,
+            excerpt: body.excerpt,
+            contentHtml: body.contentHtml,
+            contentJson,
+            metaTitle: body.metaTitle,
+            metaDescription: body.metaDescription,
+            canonicalUrl: body.canonicalUrl,
+            isActive: body.isActive,
+            isIndexable: body.isIndexable
+          },
+          include: { seoMetadata: true }
+        });
+        return { data: category };
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+          return reply.code(404).send({ message: 'Catégorie introuvable.' });
+        }
+        throw error;
+      }
     });
     protectedScope.delete('/categories/:id', async (request, reply) => {
       try {

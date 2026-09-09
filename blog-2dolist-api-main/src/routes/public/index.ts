@@ -100,10 +100,24 @@ function getLocalizedPageSeo(pageKey: string, locale: string) {
 }
 
 function serializePublicCategory<T extends { slug: string; path?: string | null; seoMetadata?: { canonicalUrl: string | null } | null }>(category: T, locale: string) {
+  const editorial = category as T & {
+    name: string;
+    excerpt?: string | null;
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    canonicalUrl?: string | null;
+    isIndexable?: boolean;
+  };
+  const canonicalUrl = buildCategoryPublicCanonical(category, locale, editorial.canonicalUrl ?? category.seoMetadata?.canonicalUrl);
+  const title = editorial.metaTitle || `${editorial.name} | Blog 2Dolist`;
+  const description = editorial.metaDescription || editorial.excerpt || `Découvrez les articles de la rubrique ${editorial.name} sur Blog 2Dolist.`;
+  const robots = editorial.isIndexable === false ? 'noindex,follow' : 'index,follow';
   return {
     ...category,
     path: buildCategoryPublicPath(category, locale),
-    canonicalUrl: buildCategoryPublicCanonical(category, locale, category.seoMetadata?.canonicalUrl),
+    canonicalUrl,
+    robots,
+    seo: { title, description, canonicalUrl, robots },
     hreflang: buildCategoryHreflang(category.slug)
   };
 }
@@ -364,7 +378,12 @@ export const publicRoutes: FastifyPluginAsync = async (fastify) => {
     if ('error' in parsedLocale) return reply.code(400).send({ message: parsedLocale.error });
 
     const categories = await fastify.prisma.category.findMany({
-      include: { seoMetadata: true, _count: { select: { posts: true } } },
+      where: { isActive: true },
+      include: {
+        seoMetadata: true,
+        posts: { where: getPublicPostWhere(parsedLocale.locale), include: postInclude, orderBy: { publishedAt: 'desc' } },
+        _count: { select: { posts: true } }
+      },
       orderBy: { name: 'asc' }
     });
     return {
@@ -380,13 +399,13 @@ export const publicRoutes: FastifyPluginAsync = async (fastify) => {
     if ('error' in parsedPath) return reply.code(400).send({ message: parsedPath.error });
 
     const category = await fastify.prisma.category.findFirst({
-      where: { path: { in: getPathLookupCandidates(parsedPath.path) } },
+      where: { path: { in: getPathLookupCandidates(parsedPath.path) }, isActive: true },
       include: { seoMetadata: true }
     });
     if (!category) return reply.code(404).send({ message: 'Category not found' });
 
     const posts = await fastify.prisma.post.findMany({
-      where: { categoryId: category.id, locale: parsedLocale.locale, ...getIndexablePublicPostWhere() },
+      where: { categoryId: category.id, ...getPublicPostWhere(parsedLocale.locale) },
       include: postInclude,
       orderBy: { publishedAt: 'desc' }
     });
@@ -405,7 +424,7 @@ export const publicRoutes: FastifyPluginAsync = async (fastify) => {
     if ('error' in parsedLocale) return reply.code(400).send({ message: parsedLocale.error });
 
     const slug = (request.params as { slug: string }).slug;
-    const category = await fastify.prisma.category.findUnique({ where: { slug }, include: { seoMetadata: true } });
+    const category = await fastify.prisma.category.findFirst({ where: { slug, isActive: true }, include: { seoMetadata: true } });
     if (!category) return reply.code(404).send({ message: 'Category not found' });
 
     const posts = await fastify.prisma.post.findMany({
