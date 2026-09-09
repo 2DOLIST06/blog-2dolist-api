@@ -9,6 +9,8 @@ import {
   buildCategoryCanonical,
   buildCategoryHreflang,
   buildCategoryPath,
+  buildCategoryPublicCanonical,
+  buildCategoryPublicPath,
   buildPageCanonical,
   buildPageHreflang,
   buildPagePath,
@@ -97,11 +99,11 @@ function getLocalizedPageSeo(pageKey: string, locale: string) {
   };
 }
 
-function serializePublicCategory<T extends { slug: string }>(category: T, locale: string) {
+function serializePublicCategory<T extends { slug: string; path?: string | null; seoMetadata?: { canonicalUrl: string | null } | null }>(category: T, locale: string) {
   return {
     ...category,
-    path: buildCategoryPath(locale, category.slug),
-    canonicalUrl: buildCategoryCanonical(locale, category.slug),
+    path: buildCategoryPublicPath(category, locale),
+    canonicalUrl: buildCategoryPublicCanonical(category, locale, category.seoMetadata?.canonicalUrl),
     hreflang: buildCategoryHreflang(category.slug)
   };
 }
@@ -371,12 +373,39 @@ export const publicRoutes: FastifyPluginAsync = async (fastify) => {
     };
   });
 
+  fastify.get('/categories/by-path', async (request, reply) => {
+    const parsedLocale = parseLocaleQuery(request.query);
+    if ('error' in parsedLocale) return reply.code(400).send({ message: parsedLocale.error });
+    const parsedPath = parsePathQuery(request.query);
+    if ('error' in parsedPath) return reply.code(400).send({ message: parsedPath.error });
+
+    const category = await fastify.prisma.category.findFirst({
+      where: { path: { in: getPathLookupCandidates(parsedPath.path) } },
+      include: { seoMetadata: true }
+    });
+    if (!category) return reply.code(404).send({ message: 'Category not found' });
+
+    const posts = await fastify.prisma.post.findMany({
+      where: { categoryId: category.id, locale: parsedLocale.locale, ...getIndexablePublicPostWhere() },
+      include: postInclude,
+      orderBy: { publishedAt: 'desc' }
+    });
+    const translationsByGroup = await getTranslationsByGroup(fastify, posts.map((post) => post.translationGroupId));
+
+    return {
+      data: {
+        category: serializePublicCategory(category, parsedLocale.locale),
+        posts: posts.map((post) => serializePublicPost(post, translationsByGroup.get(post.translationGroupId) ?? []))
+      }
+    };
+  });
+
   fastify.get('/categories/:slug/posts', async (request, reply) => {
     const parsedLocale = parseLocaleQuery(request.query);
     if ('error' in parsedLocale) return reply.code(400).send({ message: parsedLocale.error });
 
     const slug = (request.params as { slug: string }).slug;
-    const category = await fastify.prisma.category.findUnique({ where: { slug } });
+    const category = await fastify.prisma.category.findUnique({ where: { slug }, include: { seoMetadata: true } });
     if (!category) return reply.code(404).send({ message: 'Category not found' });
 
     const posts = await fastify.prisma.post.findMany({

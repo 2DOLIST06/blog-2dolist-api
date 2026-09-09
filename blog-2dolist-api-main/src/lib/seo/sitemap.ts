@@ -2,7 +2,7 @@ import { PostStatus, SeoEntityType } from '@prisma/client';
 import type { PrismaClient } from '@prisma/client';
 import {
   SITE_BASE_URL,
-  buildCategoryCanonical,
+  buildCategoryPublicCanonical,
   buildPageCanonical,
   buildPostPublicCanonical,
   isPostLocale,
@@ -92,7 +92,7 @@ export async function buildSitemapXml(prisma: PrismaClient, locale: PostLocale):
     }),
     prisma.category.findMany({
       where: { posts: { some: indexablePostWhere } },
-      select: { slug: true, updatedAt: true },
+      select: { slug: true, path: true, updatedAt: true, seoMetadata: { select: { canonicalUrl: true } } },
       orderBy: { slug: 'asc' }
     }),
     prisma.seoMetadata.findMany({
@@ -124,7 +124,7 @@ export async function buildSitemapXml(prisma: PrismaClient, locale: PostLocale):
   }));
 
   const categoryEntries: SitemapEntry[] = categories.map((category) => ({
-    loc: buildCategoryCanonical(locale, category.slug),
+    loc: buildCategoryPublicCanonical(category, locale, category.seoMetadata?.canonicalUrl),
     lastmod: category.updatedAt,
     changefreq: 'weekly',
     priority: 0.6

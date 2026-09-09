@@ -173,6 +173,25 @@ export function buildCategoryCanonical(locale: string, slug: string): string {
   return buildCanonicalUrl(locale, `/categories/${slug}`);
 }
 
+export type CategoryUrlSource = {
+  slug: string;
+  path?: string | null;
+};
+
+export function buildCategoryPublicPath(category: CategoryUrlSource, locale: string): string {
+  return normalizePublicPath(category.path) ?? buildCategoryPath(locale, category.slug);
+}
+
+export function buildCategoryPublicCanonical(
+  category: CategoryUrlSource,
+  locale: string,
+  canonicalUrl?: string | null
+): string {
+  if (isAllowedCanonicalUrl(canonicalUrl)) return canonicalUrl;
+  const publicPath = normalizePublicPath(category.path);
+  return publicPath ? `${SITE_BASE_URL}${publicPath}` : buildCategoryCanonical(locale, category.slug);
+}
+
 export function buildCategoryHreflang(slug: string): HreflangLink[] {
   return buildHreflang(Object.fromEntries(SUPPORTED_POST_LOCALES.map((locale) => [locale, `/categories/${slug}`])));
 }

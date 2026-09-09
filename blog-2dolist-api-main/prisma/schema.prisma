@@ -64,6 +64,7 @@ model Category {
   id             String      @id @default(cuid())
   name           String
   slug           String      @unique
+  path           String?     @unique
   description    String?
   posts          Post[]
   seoMetadata    SeoMetadata?
