@@ -27,6 +27,8 @@
     "analyze:wordpress-content": "tsx scripts/analyze-wordpress-content-blocks.ts",
     "cleanup:faq-duplicates:dry-run": "tsx scripts/cleanup-duplicated-faq-content.ts --dry-run",
     "cleanup:faq-duplicates": "tsx scripts/cleanup-duplicated-faq-content.ts",
+    "cleanup:wordpress-comments:dry-run": "tsx scripts/cleanup-wordpress-comments.ts --dry-run",
+    "cleanup:wordpress-comments": "tsx scripts/cleanup-wordpress-comments.ts --write",
     "normalize:wordpress-content:dry-run": "tsx scripts/normalize-wordpress-imported-content.ts --dry-run",
     "normalize:wordpress-content": "tsx scripts/normalize-wordpress-imported-content.ts",
     "analyze:wordpress-images": "tsx scripts/analyze-wordpress-images.ts",
