@@ -260,6 +260,11 @@ export const adminApiRoutes: FastifyPluginAsync = async (fastify) => {
 
     protectedScope.get('/newsletter-subscribers', async () => {
       const subscribers = await fastify.prisma.newsletterSubscriber.findMany({
+        select: {
+          id: true, email: true, status: true, language: true, source: true,
+          confirmedAt: true, unsubscribedAt: true, consentAt: true,
+          consentTextVersion: true, consentSource: true, createdAt: true, updatedAt: true
+        },
         orderBy: { createdAt: 'desc' }
       });
       return { data: subscribers };
