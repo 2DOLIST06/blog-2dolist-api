@@ -25,13 +25,8 @@ import {
   isPostLocale,
   normalizePublicPath
 } from '../../lib/seo/urls.js';
-import { sendNewsletterSubscriptionEmail } from '../../lib/email/newsletter.js';
 import { buildRobotsTxt, buildSitemapXml } from '../../lib/seo/sitemap.js';
-
-const newsletterSubscriptionSchema = z.object({
-  email: z.string().trim().toLowerCase().email('Adresse e-mail invalide.'),
-  source: z.string().trim().max(120).optional().or(z.literal(''))
-});
+import { newsletterRoutes } from './newsletter.js';
 
 const getPublicPostWhere = (locale?: string) => ({
   status: PostStatus.PUBLISHED,
@@ -213,6 +208,7 @@ async function getTranslationsByGroup(fastify: Parameters<FastifyPluginAsync>[0]
 
 export const publicRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/health', async () => ({ ok: true }));
+  fastify.register(newsletterRoutes, { prefix: '/newsletter' });
 
   const sendDefaultSitemap = async (_request: unknown, reply: FastifyReply) => {
     const sitemap = await buildSitemapXml(fastify.prisma, DEFAULT_POST_LOCALE);
@@ -229,39 +225,6 @@ export const publicRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/robots.txt', async (_request, reply) =>
     reply.header('Content-Type', 'text/plain; charset=utf-8').send(buildRobotsTxt())
   );
-
-  fastify.post('/newsletter', async (request, reply) => {
-    const subscription = newsletterSubscriptionSchema.parse(request.body);
-    const source = subscription.source || undefined;
-    const userAgent = request.headers['user-agent'];
-    const normalizedUserAgent = Array.isArray(userAgent) ? userAgent.join(' ') : userAgent;
-
-    const existingSubscriber = await fastify.prisma.newsletterSubscriber.findUnique({ where: { email: subscription.email } });
-    const subscriber = existingSubscriber
-      ? await fastify.prisma.newsletterSubscriber.update({
-          where: { email: subscription.email },
-          data: { source, userAgent: normalizedUserAgent }
-        })
-      : await fastify.prisma.newsletterSubscriber.create({
-          data: { email: subscription.email, source, userAgent: normalizedUserAgent }
-        });
-
-    if (!subscriber.notificationSentAt) {
-      await sendNewsletterSubscriptionEmail({
-        email: subscriber.email,
-        source: subscriber.source ?? undefined
-      });
-      await fastify.prisma.newsletterSubscriber.update({
-        where: { id: subscriber.id },
-        data: { notificationSentAt: new Date() }
-      });
-    }
-
-    return reply.code(existingSubscriber ? 200 : 202).send({
-      message: existingSubscriber ? 'Adresse déjà inscrite à la newsletter.' : 'Inscription newsletter reçue.',
-      data: { id: subscriber.id, email: subscriber.email, alreadySubscribed: Boolean(existingSubscriber) }
-    });
-  });
 
   fastify.get('/posts', async (request, reply) => {
     const parsedLocale = parseLocaleQuery(request.query);

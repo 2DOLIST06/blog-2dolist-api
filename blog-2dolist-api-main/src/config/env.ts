@@ -28,7 +28,11 @@ const envSchema = z.object({
   SMTP_PASSWORD: z.string().min(1).optional(),
   SMTP_EHLO_DOMAIN: z.string().min(1).default('blog-api'),
   MAIL_FROM: z.string().email().optional(),
-  NEWSLETTER_RECIPIENT_EMAIL: z.string().email().default('contact@2dolist.fr')
+  NEWSLETTER_RECIPIENT_EMAIL: z.string().email().default('contact@2dolist.fr'),
+  BREVO_API_KEY: z.string().min(1).optional(),
+  BREVO_SENDER_EMAIL: z.string().email().optional(),
+  BREVO_SENDER_NAME: z.string().min(1).optional(),
+  FRONTEND_URL: z.string().url().optional()
 });
 
 const parsed = envSchema.parse(process.env);

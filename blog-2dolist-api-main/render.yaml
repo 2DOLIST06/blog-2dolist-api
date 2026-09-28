@@ -22,6 +22,14 @@ services:
         sync: false
       - key: CORS_ORIGIN
         sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        sync: false
+      - key: BREVO_SENDER_NAME
+        value: 2Dolist
       - key: SMTP_SERVER
         sync: false
       - key: SMTP_PORT
