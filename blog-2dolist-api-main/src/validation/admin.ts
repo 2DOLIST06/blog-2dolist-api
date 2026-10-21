@@ -65,7 +65,7 @@ export const postSchema = z.object({
   path: z.string().trim().optional().nullable(),
   locale: z.enum(SUPPORTED_POST_LOCALES).default(SUPPORTED_POST_LOCALES[0]),
   translationGroupId: z.string().trim().optional().nullable(),
-  excerpt: z.string().max(280).optional(),
+  excerpt: z.string().optional().nullable(),
   contentHtml: z.string().min(10),
   contentJson: z.union([z.record(z.string(), z.unknown()), z.array(z.unknown())]).optional(),
   h1: z.string().min(2).optional().nullable(),
